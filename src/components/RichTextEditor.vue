@@ -2,26 +2,32 @@
   <v-container>
     <v-row class="ma-0">
       <v-col class="px-0">
-        <v-chip-group v-model="selectedTemp" column>
-          <v-chip
-            v-for="(data, index) in savedTemp"
-            :key="index"
-            @click="loadData(data.obj, index)"
-            @click:close="loadData('')"
-            :close="selectedChipIndex === index"
-            :close-icon="selectedChipIndex > -1 ? 'mdi-close' : ''"
+        {{ selectedTemp }}
+        <v-chip-group
+          v-model="selectedTemp"
+          active-class="primary--text"
+          column
+        >
+          <!-- @click="loadData(data.obj, index)" -->
+          <v-chip v-for="(data, index) in savedTemp" :key="index">
+            <!-- @click:close="loadData('')"
+            :close="selectedTemp === index"
+            :close-icon="selectedTemp > -1 ? 'mdi-close' : ''"
             :color="data.color"
-            :class="`mr-2 ${data.fontColor}`"
-          >
+            :class="`mr-2 ${data.fontColor}`" -->
             {{ data.title }}
             <v-icon
               small
-              v-if="selectedChipIndex !== index"
-              @click="deleteBlock(index)"
+              @click="
+                () => {
+                  if (selectedTemp === index) loadData('');
+                  else deleteBlock(index);
+                }
+              "
               class="ml-2"
               :color="`mr-2 ${data.fontColor}`"
             >
-              mdi-delete
+              {{ selectedTemp !== index ? "mdi-delete" : "mdi-close" }}
             </v-icon>
           </v-chip>
         </v-chip-group>
@@ -68,6 +74,15 @@ export default {
       selectedTemp: null,
     };
   },
+  watch: {
+    selectedTemp(index) {
+      if (typeof index == "number") {
+        this.loadData(this.savedTemp[index].obj);
+      } else {
+        this.loadData("");
+      }
+    },
+  },
   methods: {
     renderQuill() {
       const interval = setInterval(async () => {
@@ -101,7 +116,6 @@ export default {
         const { r, g, b } = this.getRandomColor();
         obj.color = `rgb(${r}, ${g}, ${b})`;
         obj.fontColor = this.getFontColor(r, g, b);
-        console.log(obj);
         return obj;
       });
     },
@@ -109,10 +123,8 @@ export default {
       this.savedTemp.splice(index, 1);
       localStorage.setItem("blocks", JSON.stringify(this.savedTemp));
       this.loadData("");
-      this.selectedChipIndex = null;
     },
-    loadData(data, index) {
-      this.selectedChipIndex = index;
+    loadData(data) {
       this.quill.setContents(data);
     },
     openDialog() {
