@@ -16,6 +16,7 @@
       </v-card-text>
       <v-card-actions class="pa-0">
         <v-btn
+          :disabled="!inputVal"
           @click="saveTemplate"
           block
           depressed
@@ -90,6 +91,7 @@ export default {
     async saveTemplate() {
       const data = await getQuillData(this.quill);
       this.$emit("text-block", this.inputVal, data);
+      this.inputVal = "";
       this.openDialog = false;
     },
   },
