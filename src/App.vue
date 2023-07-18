@@ -6,7 +6,7 @@
           <UserList />
         </v-col> -->
         <v-col>
-          <RichTextEditor />
+          <EmailTemplate />
         </v-col>
       </v-row>
     </v-container>
@@ -15,13 +15,13 @@
 
 <script>
 import UserList from "./components/UserList.vue";
-import RichTextEditor from "./components/RichTextEditor.vue";
+import EmailTemplate from "./components/EmailTemplate.vue";
 
 export default {
   name: "App",
   components: {
     UserList,
-    RichTextEditor
-},
+    EmailTemplate,
+  },
 };
 </script>

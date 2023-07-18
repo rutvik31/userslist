@@ -10,9 +10,7 @@
       </v-card-title>
       <v-card-text>
         <v-text-field v-model="inputVal" label="Name"></v-text-field>
-        <div class="rich-text-editor">
-          <div ref="textBlockEditor" class="editor"></div>
-        </div>
+        <QuillEditor id="templateForm" ref="editor" v-model="quillData" />
       </v-card-text>
       <v-card-actions class="pa-0">
         <v-btn
@@ -22,30 +20,36 @@
           depressed
           color="primary"
           class="rounded-0"
-          >save</v-btn
         >
+          {{ selectedObject ? "update" : "save" }}
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script>
-import Quill from "quill";
-import { createQuillInstance, getQuillData } from "../utils/qillMethods";
-
+import QuillEditor from "./General/QuillRichTextEditor.vue";
 export default {
+  components: {
+    QuillEditor,
+  },
   props: {
     value: {
       default: false,
     },
     selectedText: {
-      required: true,
+      required: false,
+    },
+    selectedObject: {
+      required: false,
     },
   },
   data() {
     return {
       quill: null,
       inputVal: "",
+      quillData: "",
     };
   },
   computed: {
@@ -61,26 +65,23 @@ export default {
   watch: {
     openDialog(val) {
       if (val) {
-        if (!this.quill) this.renderQuill();
+        if (!this.selectedText && !this.selectedObject)
+          throw new Error("Selected Text/Object is required");
         this.getTextFromRTE();
       }
     },
   },
   methods: {
-    renderQuill() {
-      const interval = setInterval(async () => {
-        const editor = this.$refs.textBlockEditor;
-        if (editor) {
-          clearInterval(interval);
-          this.quill = await createQuillInstance(Quill, editor);
-        }
-      }, 400);
-    },
     getTextFromRTE() {
       const interval = setInterval(() => {
-        if (this.quill) {
+        const editor = this.$refs?.editor;
+        if (editor) {
           clearInterval(interval);
-          this.quill.setContents(this.selectedText);
+          if (this.selectedText) editor.setContents(this.selectedText);
+          if (this.selectedObject) {
+            editor.setContents(this.selectedObject.obj);
+            this.inputVal = this.selectedObject.title;
+          }
         }
       }, 400);
 
@@ -89,8 +90,8 @@ export default {
       }, 3000);
     },
     async saveTemplate() {
-      const data = await getQuillData(this.quill);
-      this.$emit("text-block", this.inputVal, data);
+      console.log(this.quillData)
+      this.$emit("text-block", this.inputVal, this.quillData);
       this.inputVal = "";
       this.openDialog = false;
     },

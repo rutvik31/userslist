@@ -2,7 +2,7 @@
   <v-container>
     <v-row class="ma-0">
       <v-col class="px-0">
-        <v-chip-group v-model="selectedTemp" column>
+        <v-chip-group column>
           <v-chip
             v-for="(data, index) in savedTemp"
             :key="index"
@@ -23,12 +23,20 @@
             >
               mdi-delete
             </v-icon>
+            <v-icon small @click="editBlock(data)" class="ml-2">
+              mdi-pencil
+            </v-icon>
           </v-chip>
         </v-chip-group>
       </v-col>
     </v-row>
     <div class="rich-text-editor">
-      <div ref="editor" class="editor"></div>
+      <QuillEditor
+        id="templateMain"
+        ref="editor"
+        v-model="test"
+        @selection="getSelectedText"
+      />
       <button
         @click="openDialog"
         :disabled="!selectedText"
@@ -36,8 +44,9 @@
       >
         Make a text block of a selected text
       </button>
-      <RichTextEditorBlocks
+      <EmailTemplateForm
         @text-block="saveTextBlock"
+        :selected-object="selectedObject"
         :selected-text="selectedText"
         v-model="dialogOpen"
       />
@@ -46,40 +55,31 @@
 </template>
 
 <script>
-import Quill from "quill";
-import "quill/dist/quill.snow.css";
-import RichTextEditorBlocks from "./RichTextEditorBlocks.vue";
-import {
-  createQuillInstance,
-  getSelectedQuillData,
-} from "../utils/qillMethods";
-
+import EmailTemplateForm from "./EmailTemplateForm.vue";
+import QuillEditor from "./General/QuillRichTextEditor.vue";
 export default {
   components: {
-    RichTextEditorBlocks,
+    EmailTemplateForm,
+    QuillEditor,
   },
   data() {
     return {
       dialogOpen: false,
       selectedText: null,
-      quill: null,
       savedTemp: [],
       selectedChipIndex: null,
-      selectedTemp: null,
+      selectedObject: null,
+      test: null,
     };
   },
-  methods: {
-    renderQuill() {
-      const interval = setInterval(async () => {
-        const editor = this.$refs.editor;
-        if (editor) {
-          clearInterval(interval);
-          this.quill = await createQuillInstance(Quill, editor);
-        }
-      }, 400);
+  watch: {
+    test(v) {
+      console.log(v);
     },
-    async getSelectedData() {
-      this.selectedText = await getSelectedQuillData(this.quill);
+  },
+  methods: {
+    getSelectedText(text) {
+      this.selectedText = text;
     },
     saveTextBlock(title, obj) {
       const object = {
@@ -91,49 +91,49 @@ export default {
       object.color = `rgb(${r}, ${g}, ${b})`;
       object.fontColor = this.getFontColor(r, g, b);
 
-      this.savedTemp.push(object);
-      localStorage.setItem("blocks", JSON.stringify(this.savedTemp));
-      this.loadData("");
+      if (this.selectedObject) {
+        object.id = this.selectedObject.id;
+        // dispatch  ("patch", object)
+      } else {
+        // dispatch  ("post", object)
+      }
+
+      // this.savedTemp.push(object);
+      // localStorage.setItem("blocks", JSON.stringify(this.savedTemp));
+      // this.loadData("");
     },
     getTextBlocks() {
-      this.savedTemp = JSON.parse(localStorage.getItem("blocks") || "[]");
+      // dispatch  ("get")
+      // this.savedTemp = JSON.parse(localStorage.getItem("blocks") || "[]");
       this.savedTemp = this.savedTemp.map((obj) => {
         const { r, g, b } = this.getRandomColor();
         obj.color = `rgb(${r}, ${g}, ${b})`;
         obj.fontColor = this.getFontColor(r, g, b);
-        console.log(obj);
         return obj;
       });
     },
-    deleteBlock(index) {
-      this.savedTemp.splice(index, 1);
-      localStorage.setItem("blocks", JSON.stringify(this.savedTemp));
+    deleteBlock(index) { // replace index with id
+      // dispatch  ("get", id)
+      // this.savedTemp.splice(index, 1);
+      // localStorage.setItem("blocks", JSON.stringify(this.savedTemp));
       this.loadData("");
       this.selectedChipIndex = null;
     },
     loadData(data, index) {
-      this.selectedChipIndex = index;
-      this.quill.setContents(data);
+      if (typeof index === "number") this.selectedChipIndex = index;
+      this.$refs?.editor?.setContents(data);
+    },
+    editBlock(data) {
+      this.selectedObject = data;
+      this.openDialog();
     },
     openDialog() {
-      if (this.selectedText) {
+      if (this.selectedText || this.selectedObject) {
         this.dialogOpen = true;
       }
     },
     closeDialog() {
       this.dialogOpen = false;
-    },
-    loadEvents() {
-      const interval = setInterval(() => {
-        if (this.quill) {
-          clearInterval(interval);
-          this.quill.on("selection-change", this.getSelectedData);
-        }
-      }, 400);
-
-      setTimeout(() => {
-        if (interval) clearInterval(interval);
-      }, 3000);
     },
     getRandomColor() {
       const r = Math.floor(Math.random() * 256);
@@ -150,8 +150,6 @@ export default {
     },
   },
   mounted() {
-    this.renderQuill();
-    this.loadEvents();
     this.getTextBlocks();
   },
 };
