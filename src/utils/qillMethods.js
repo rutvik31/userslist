@@ -1,6 +1,11 @@
 import "quill/dist/quill.snow.css";
 
-export async function createQuillInstance(Quill, elem) {
+export async function createQuillInstance(
+  Quill,
+  elem,
+  options = {},
+  modules = {}
+) {
   return new Quill(elem, {
     modules: {
       toolbar: [
@@ -13,8 +18,10 @@ export async function createQuillInstance(Quill, elem) {
         ["link", "image"],
         ["clean"],
       ],
+      ...modules,
     },
     theme: "snow",
+    ...options,
   });
 }
 
@@ -22,7 +29,7 @@ export async function getSelectedQuillData(quill) {
   const selection = quill.getSelection();
   const isTextSelected = !!selection && selection.length > 0;
   if (isTextSelected) {
-    const selectedText = quill.getContents(selection.index, selection.length);
+    const selectedText = quill.getContents(); //selection.index, selection.length
     return selectedText;
   }
   return "";

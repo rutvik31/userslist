@@ -3,10 +3,13 @@
     <div :id="id" ref="editor" class="editor"></div>
   </div>
 </template>
-  
+
 <script>
 import Quill from "quill";
 import "quill/dist/quill.snow.css";
+import "quill-mention/dist/quill.mention.min.css";
+import "quill-mention";
+
 import {
   getQuillData,
   createQuillInstance,
@@ -19,8 +22,8 @@ export default {
       required: false,
     },
     id: {
-      required: true
-    }
+      required: true,
+    },
   },
   data() {
     return {
@@ -28,12 +31,39 @@ export default {
     };
   },
   methods: {
+    async suggestPeople(searchTerm) {
+      const allPeople = [
+        {
+          id: 1,
+          value: "Fredrik Sundqvist",
+        },
+        {
+          id: 2,
+          value: "Patrik Sjölin",
+        },
+      ];
+      return allPeople.filter((person) => person.value.includes(searchTerm));
+    },
     renderQuill() {
       const interval = setInterval(async () => {
         const editor = this.$refs.editor;
         if (editor) {
           clearInterval(interval);
-          this.quill = await createQuillInstance(Quill, editor);
+          this.quill = await createQuillInstance(
+            Quill,
+            editor,
+            {},
+            {
+              mention: {
+                allowedChars: /^[A-Za-z\sÅÄÖåäö]*$/,
+                mentionDenotationChars: ["@", "#"],
+                source: async (searchTerm, renderList) => {
+                  const matchedPeople = await this.suggestPeople(searchTerm);
+                  renderList(matchedPeople);
+                },
+              },
+            }
+          );
         }
       }, 400);
     },
@@ -79,8 +109,8 @@ export default {
   },
 };
 </script>
-  
-  <style scoped>
+
+<style scoped>
 .rich-text-editor {
   display: flex;
   flex-direction: column;

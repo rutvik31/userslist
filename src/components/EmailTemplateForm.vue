@@ -77,8 +77,9 @@ export default {
         const editor = this.$refs?.editor;
         if (editor) {
           clearInterval(interval);
-          if (this.selectedText) editor.setContents(this.selectedText);
-          if (this.selectedObject) {
+          if (this.selectedText) {
+            editor.setContents(this.selectedText);
+          } else if (this.selectedObject) {
             editor.setContents(this.selectedObject.obj);
             this.inputVal = this.selectedObject.title;
           }
@@ -90,7 +91,6 @@ export default {
       }, 3000);
     },
     async saveTemplate() {
-      console.log(this.quillData)
       this.$emit("text-block", this.inputVal, this.quillData);
       this.inputVal = "";
       this.openDialog = false;

@@ -72,19 +72,27 @@ export default {
       test: null,
     };
   },
+  computed: {
+    isQuillFocused() {
+      return this.$refs?.editor?.hasFocus();
+    },
+  },
   watch: {
     test(v) {
       console.log(v);
     },
+    isQuillFocused(val) {
+      if (!val) this.$refs?.editor?.setSelection(0, 0);
+    },
   },
   methods: {
-    getSelectedText(text) {
-      this.selectedText = text;
+    getSelectedText(selectedText) {
+      this.selectedText = selectedText;
     },
     saveTextBlock(title, obj) {
       const object = {
         title,
-        obj,
+        obj: obj || this.selectedText,
       };
 
       const { r, g, b } = this.getRandomColor();
@@ -93,18 +101,19 @@ export default {
 
       if (this.selectedObject) {
         object.id = this.selectedObject.id;
-        // dispatch  ("patch", object)
+        const index = this.savedTemp.findIndex((item) => item.id === object.id);
+        this.savedTemp.splice(index, 1, object);
       } else {
-        // dispatch  ("post", object)
+        this.savedTemp.push(object);
       }
 
-      // this.savedTemp.push(object);
-      // localStorage.setItem("blocks", JSON.stringify(this.savedTemp));
-      // this.loadData("");
+      localStorage.setItem("blocks", JSON.stringify(this.savedTemp));
+      this.loadData("");
+      this.dialogOpen = false;
     },
+
     getTextBlocks() {
-      // dispatch  ("get")
-      // this.savedTemp = JSON.parse(localStorage.getItem("blocks") || "[]");
+      this.savedTemp = JSON.parse(localStorage.getItem("blocks") || "[]");
       this.savedTemp = this.savedTemp.map((obj) => {
         const { r, g, b } = this.getRandomColor();
         obj.color = `rgb(${r}, ${g}, ${b})`;
@@ -112,24 +121,27 @@ export default {
         return obj;
       });
     },
-    deleteBlock(index) { // replace index with id
-      // dispatch  ("get", id)
-      // this.savedTemp.splice(index, 1);
-      // localStorage.setItem("blocks", JSON.stringify(this.savedTemp));
+    deleteBlock(index) {
+      this.savedTemp.splice(index, 1);
+      localStorage.setItem("blocks", JSON.stringify(this.savedTemp));
       this.loadData("");
       this.selectedChipIndex = null;
     },
     loadData(data, index) {
-      if (typeof index === "number") this.selectedChipIndex = index;
+      this.selectedChipIndex = index;
       this.$refs?.editor?.setContents(data);
     },
     editBlock(data) {
       this.selectedObject = data;
       this.openDialog();
+      this.test = data.obj;
     },
     openDialog() {
       if (this.selectedText || this.selectedObject) {
         this.dialogOpen = true;
+        if (this.selectedObject) {
+          this.selectedText = this.selectedObject.obj; // Set the selected text to the current content
+        }
       }
     },
     closeDialog() {
